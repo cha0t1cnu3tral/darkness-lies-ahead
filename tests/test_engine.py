@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from game.engine import Game, World, WORLD, SIZE
@@ -100,6 +101,31 @@ class EngineTests(unittest.TestCase):
                     game.save(directory)
             self.assertEqual(manifest.read_bytes(), original)
             restored = Game.load(manifest)
+            restored.world.close()
+
+    def test_partial_chunk_write_can_be_retried_without_corrupting_save(self):
+        game = self.game
+        game.world.at(3, 8)
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = game.save(directory)
+            previous = manifest.read_bytes()
+            game.world.at(5, 8)[1][0]["opened"] = True
+            real_write = Path.write_bytes
+
+            def partial_write(path, data):
+                real_write(path, data[:10])
+                raise OSError("Disk full during chunk write")
+
+            with patch.object(Path, "write_bytes", partial_write):
+                with self.assertRaises(OSError):
+                    game.save(directory)
+            self.assertEqual(manifest.read_bytes(), previous)
+            original = Game.load(manifest)
+            self.assertFalse(original.world.at(5, 8)[1][0]["opened"])
+            original.world.close()
+            game.save(directory)
+            restored = Game.load(manifest)
+            self.assertTrue(restored.world.at(5, 8)[1][0]["opened"])
             restored.world.close()
 
     def test_combat_death_block_and_cover(self):

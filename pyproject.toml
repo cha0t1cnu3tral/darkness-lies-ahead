@@ -1,3 +1,18 @@
+[project]
+name = "darkness-lies-ahead"
+version = "0.2.0"
+description = "Accessible graphical turn-based survival and exploration on Windows"
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+dependencies = ["pygame-ce==2.5.8", "wxPython==4.3.1"]
+
+[dependency-groups]
+dev = ["pyinstaller==6.22.3", "ruff==0.17.0"]
+
+[tool.uv]
+package = false
+default-groups = []
+
 [tool.ruff]
 target-version = "py314"
 line-length = 100

@@ -17,6 +17,12 @@
     "save": ["interface-sounds/confirmation_001.ogg"],
     "talk": ["rpg-audio/cloth3.ogg"],
     "rest": ["rpg-audio/cloth4.ogg"]
+    ,"gather": ["rpg-audio/cloth1.ogg", "rpg-audio/chop.ogg"]
+    ,"pickup": ["rpg-audio/handleSmallLeather.ogg", "rpg-audio/handleSmallLeather2.ogg"]
+    ,"drop": ["rpg-audio/dropLeather.ogg"]
+    ,"equip": ["rpg-audio/drawKnife1.ogg", "rpg-audio/drawKnife2.ogg"]
+    ,"craft_cloth": ["rpg-audio/cloth1.ogg", "rpg-audio/cloth2.ogg"]
+    ,"craft_wood": ["rpg-audio/chop.ogg", "impact-sounds/impactWood_medium_000.ogg"]
   },
   "surfaces": {"grass": "footstep_grass_*.ogg", "wood": "footstep_wood_*.ogg", "carpet": "footstep_carpet_*.ogg", "concrete": "footstep_concrete_*.ogg"}
 }

@@ -7,7 +7,8 @@ import wx
 
 from .accessibility import Narrator
 from .audio import Audio
-from .engine import Game, Event, ITEMS, SIZE
+from .engine import Game, Event, ITEMS, RECIPES, SIZE
+from .dialogs import DetailChoiceDialog, NewGameDialog
 from .paths import USER
 from . import settings as preferences
 
@@ -21,11 +22,13 @@ Mara stands northwest of your starting position. A feral dog prowls the yard.
 Arrow keys: walk one tile. Shift + Arrow: run up to two tiles.
 Control + Arrow: crouch quietly. Alt + Arrow: dodge one tile.
 Space: jump two clear tiles in your facing direction.
-Enter or G: open the nearby interaction menu.
-I: inventory and item actions. L: describe your tile and adjacent tiles.
+Enter: nearby object interactions. G: pick up nearby ground items.
+I: inventory, inspect, use, equip, and drop actions. D: put an item down.
+C: crafting recipes, project progress, continue work, or cancel a project.
+L: describe your tile and adjacent tiles.
 S: read health, stamina, time, and weapon status.
 T: inspect nearby threats without advancing time.
-Tab on the map: cycle enemy targets. F: knife attack. Shift + F: heavy attack.
+Tab on the map: cycle enemy targets. F: melee attack. Shift + F: heavy attack.
 E: block. A: ready pistol, then A again to improve aim. F while aiming: fire.
 R: reload. V: ready knife. Period: rest and recover stamina.
 F5: save. F1: this help. Escape: save and return to the main menu.
@@ -37,8 +40,14 @@ NVDA receives game action descriptions and braille through its controller API.
 On the map, NVDA must pass keys through to the game; use NVDA + Space to switch
 to focus mode if needed. Every sound cue also has text feedback.
 
-The prototype includes exploration, scavenging, one enemy type, basic combat,
-inventory, saves, and audio settings. Farming, cooking, crafting, settlement
+Gather branches and plant fibers from brush piles. Weave cordage, then carve a
+wooden spear. Scavenge clean cloth for bandages. Crafting reserves materials;
+each work step advances time, and unfinished projects persist through saves.
+The workshop one block east has a workbench for crafting padded splints.
+Cabins, workshops, woodland and houses generate as you explore beyond the start.
+
+The prototype includes exploration, scavenging, basic crafting, basic combat,
+inventory, saves, and audio settings. Farming, cooking, advanced crafting, settlement
 management, the full building catalog, and broader NPC simulation are future work.
 """
 
@@ -126,10 +135,17 @@ class MapView(wx.Panel):
                         label = "/" if obj["opened"] else "+"
                     elif obj["type"] == "scavenger":
                         label = "M"
+                    elif obj["type"] == "workbench":
+                        label = "W"
+                    elif obj["type"] == "brush":
+                        label = "-" if obj["searched"] else "B"
                     else:
                         label = "-" if obj["searched"] else "?"
                     dc.SetTextForeground("#ffffff")
                     dc.DrawText(label, left + size // 3, top + size // 4)
+                if game.ground_at(x, y):
+                    dc.SetTextForeground("#edce79")
+                    dc.DrawText("*", left + 2, top + 2)
                 chunk = game.world.chunk(x // SIZE, y // SIZE)
                 creature = next(
                     (c for c in chunk["creatures"] if (c["x"], c["y"]) == (x % SIZE, y % SIZE)),
@@ -249,15 +265,17 @@ class Frame(wx.Frame):
     def new_game(self):
         if self.game and not self.save_game():
             return
-        dialog = wx.TextEntryDialog(self, "Name your survivor:", "New game", "Survivor")
+        dialog = NewGameDialog(self)
         if dialog.ShowModal() != wx.ID_OK:
             dialog.Destroy()
             return
-        name = dialog.GetValue().strip()[:80] or "Survivor"
+        name = dialog.name.GetValue().strip()[:80] or "Survivor"
+        raw_seed = dialog.seed.GetValue().strip()
+        seed = int(raw_seed) if raw_seed else random.SystemRandom().randrange(1, 2**31)
         dialog.Destroy()
         if self.game:
             self.game.world.close()
-        self.game = Game(random.SystemRandom().randrange(1, 2**31))
+        self.game = Game(seed)
         self.game.name = name
         self.saved_turn = None
         self.history = []
@@ -386,13 +404,14 @@ class Frame(wx.Frame):
         sidebar = wx.BoxSizer(wx.VERTICAL)
         legend = wx.StaticText(
             self.panel,
-            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Searchable container\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu",
+            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Container   B Brush\nW Workbench   * Ground items\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nG: pick up • D: drop • C: craft\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu",
         )
         legend.SetForegroundColour("#f0ede0")
         sidebar.Add(legend, 0, wx.ALL, 10)
         for label, callback in (
             ("Nearby interactions", self.interaction_menu),
             ("Inventory", self.inventory_menu),
+            ("Crafting", self.crafting_menu),
             ("Settings", self.show_settings),
             ("Save game", self.save_game),
             ("Main menu", self.return_menu),
@@ -420,12 +439,10 @@ class Frame(wx.Frame):
 
     def update_view(self):
         self.header.SetLabel(
-            f"{self.game.name}  |  Health {self.game.health}  |  Stamina {self.game.stamina}  |  Time {self.game.turn}s  |  {'Pistol' if self.game.aiming else 'Knife'}"
+            f"{self.game.name}  |  Health {self.game.health}  |  Stamina {self.game.stamina}  |  Time {self.game.turn}s  |  {'Pistol' if self.game.aiming else self.game.melee()['name']}"
         )
         tile, _ = self.game.world.at(self.game.x, self.game.y)
-        self.audio.environment(
-            tile["surface"] in ("wood", "carpet") or tile["name"] == "kitchen tile"
-        )
+        self.audio.environment(bool(tile.get("indoors")))
         self.map.Refresh()
 
     def deliver(self, events):
@@ -469,15 +486,140 @@ class Frame(wx.Frame):
 
     def inventory_menu(self):
         items = [(key, count) for key, count in self.game.inventory.items() if count > 0]
-        dialog = wx.SingleChoiceDialog(
+        if not items:
+            self.deliver([Event("Your inventory is empty.")])
+            return
+        dialog = DetailChoiceDialog(
             self,
-            "Choose an item to inspect or use.",
             "Inventory",
+            "Choose an item. Tab reads its details. Select opens its actions.",
             [f"{ITEMS[key]['name']}, quantity {count}" for key, count in items],
+            lambda index: self.item_description(items[index][0]),
         )
         if dialog.ShowModal() == wx.ID_OK:
             item = items[dialog.GetSelection()][0]
-            self.deliver(self.game.use_item(item))
+            dialog.Destroy()
+            self.item_actions(item)
+        else:
+            dialog.Destroy()
+        self.map.SetFocus()
+
+    def item_description(self, item):
+        definition = ITEMS[item]
+        text = definition["name"] + ". Quantity " + str(self.game.inventory.get(item, 0)) + "."
+        if definition.get("weapon") == "melee":
+            text += f" Melee damage {definition['damage']}. Reach {definition['reach']} tiles."
+            if self.game.melee_weapon == item:
+                text += " Equipped."
+        if definition.get("tool"):
+            text += " Crafting tool: " + definition["tool"] + "."
+        if definition.get("action"):
+            text += f" Use: {definition['action']}. Restores {definition.get('health', 0)} health and {definition.get('stamina', 0)} stamina."
+        if item == "pistol":
+            text += f" Press A on the map to aim. {self.game.ammo} rounds loaded."
+        return text
+
+    def item_actions(self, item):
+        actions = [("Inspect", lambda: [Event(self.item_description(item))])]
+        if ITEMS[item].get("action"):
+            actions.append(("Use", lambda: self.game.use_item(item)))
+        if ITEMS[item].get("weapon") == "melee":
+            actions.append(("Equip", lambda: self.game.equip(item)))
+        actions.append(("Put down one", lambda: self.game.drop_item(item)))
+        if self.game.inventory.get(item, 0) > 1:
+            actions.append(
+                ("Put down all", lambda: self.game.drop_item(item, self.game.inventory[item]))
+            )
+        dialog = wx.SingleChoiceDialog(
+            self, "Choose an action:", ITEMS[item]["name"], [name for name, action in actions]
+        )
+        if dialog.ShowModal() == wx.ID_OK:
+            self.deliver(actions[dialog.GetSelection()][1]())
+        dialog.Destroy()
+
+    def drop_menu(self):
+        items = [key for key, count in self.game.inventory.items() if count > 0]
+        if not items:
+            self.deliver([Event("Your inventory is empty.")])
+            return
+        dialog = wx.SingleChoiceDialog(
+            self,
+            "Choose an item to put down. One item is placed on your tile.",
+            "Put down item",
+            [f"{ITEMS[key]['name']}, quantity {self.game.inventory[key]}" for key in items],
+        )
+        if dialog.ShowModal() == wx.ID_OK:
+            self.deliver(self.game.drop_item(items[dialog.GetSelection()]))
+        dialog.Destroy()
+        self.map.SetFocus()
+
+    def pickup_menu(self):
+        piles = self.game.nearby_ground()
+        if not piles:
+            self.deliver(
+                [
+                    Event(
+                        "No loose items within reach. Press Enter to search or gather from nearby objects."
+                    )
+                ]
+            )
+            return
+        dialog = wx.SingleChoiceDialog(
+            self,
+            "Choose supplies to pick up:",
+            "Ground items",
+            [
+                f"{pile['count']} {ITEMS[pile['item']]['name']}, {self.game.relative(x, y)}"
+                for pile, x, y in piles
+            ],
+        )
+        if dialog.ShowModal() == wx.ID_OK:
+            pile, x, y = piles[dialog.GetSelection()]
+            self.deliver(self.game.pickup(x, y, pile["item"]))
+        dialog.Destroy()
+        self.map.SetFocus()
+
+    def crafting_menu(self):
+        project = self.game.crafting
+        if project:
+            recipe = RECIPES[project["recipe"]]
+            dialog = DetailChoiceDialog(
+                self,
+                "Current crafting project",
+                f"{recipe['name']}: {project['progress']} of {recipe['seconds']} seconds complete.",
+                ["Continue work (up to three seconds)", "Cancel and recover materials"],
+                lambda index: (
+                    "Continuing consumes game time and allows enemies to act. You can leave and resume this project later."
+                    if index == 0
+                    else "Reserved materials return to your inventory. Work progress is discarded."
+                ),
+                action="Perform action",
+            )
+            if dialog.ShowModal() == wx.ID_OK:
+                self.deliver(
+                    self.game.continue_craft()
+                    if dialog.GetSelection() == 0
+                    else self.game.cancel_craft()
+                )
+        else:
+            recipes = list(RECIPES)
+            labels = []
+            for key in recipes:
+                missing = self.game.crafting_requirements(key)
+                labels.append(
+                    RECIPES[key]["name"]
+                    + (" — missing " + ", ".join(missing) if missing else " — ready")
+                )
+            dialog = DetailChoiceDialog(
+                self,
+                "Crafting recipes",
+                "Choose a recipe. Tab reads ingredients, tools, workstations, and time.",
+                labels,
+                lambda index: self.game.recipe_description(recipes[index]),
+                action="Begin project",
+            )
+            if dialog.ShowModal() == wx.ID_OK:
+                self.deliver(self.game.start_craft(recipes[dialog.GetSelection()]))
         dialog.Destroy()
         self.map.SetFocus()
 
@@ -558,10 +700,16 @@ class Frame(wx.Frame):
             self.deliver(self.game.move(directions[code], mode))
         elif code == wx.WXK_SPACE:
             self.deliver(self.game.jump())
-        elif code in (wx.WXK_RETURN, ord("G")):
+        elif code == wx.WXK_RETURN:
             self.interaction_menu()
+        elif code == ord("G"):
+            self.pickup_menu()
         elif code == ord("I"):
             self.inventory_menu()
+        elif code == ord("D"):
+            self.drop_menu()
+        elif code == ord("C"):
+            self.crafting_menu()
         elif code == ord("L"):
             self.deliver([Event(self.game.describe() + " " + self.game.nearby())])
         elif code == ord("S"):
@@ -590,9 +738,7 @@ class Frame(wx.Frame):
         elif code == ord("R"):
             self.deliver(self.game.reload())
         elif code == ord("V"):
-            self.game.aiming = False
-            self.game.aim = 0
-            self.deliver([Event("Utility knife ready.")])
+            self.deliver(self.game.equip("knife"))
         elif code == ord("."):
             self.deliver(self.game.wait())
         elif code == wx.WXK_F5:

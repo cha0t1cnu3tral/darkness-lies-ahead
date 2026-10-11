@@ -6,7 +6,15 @@ A Windows desktop, turn-based exploration game set decades after civilization's 
 
 Download the Windows ZIP from [Releases](https://github.com/cha0t1cnu3tral/darkness-lies-ahead/releases), extract the entire folder, then open `DarknessLiesAhead.exe`. Python is not required for the packaged build. Windows 10/11, 64-bit is the initial target.
 
-The main menu contains **New game**, **Saved games**, **Settings**, and **Exit**. Start a new survivor and walk east along the path to the house. Walking into its door opens it; the next step enters. Search the kitchen cabinet and bedroom wardrobe, talk to Mara, and watch for the feral dog.
+The main menu contains **New game**, **Saved games**, **Settings**, and **Exit**. New game accepts an optional world seed; leaving it blank creates a random world. Start a new survivor and walk east along the path to the house. Walking into its door opens it; the next step enters. Search the kitchen cabinet and bedroom wardrobe, talk to Mara, and watch for the feral dog.
+
+## Procedural world and crafting
+
+The world generates **16 × 16 tile chunks on demand**, using the saved seed and chunk coordinates. Beyond the starting area, houses, cabins, workshops, brush, woodland, and encounters vary by seed. Building layouts rotate and mirror, and clear borders form continuous streets between chunks. Only nine chunks stay cached; evicted changes persist on disk. Opened doors, gathered resources, dropped supplies, enemies, and searched containers survive leaving an area and reloading a save. Enemies can follow you across chunk boundaries.
+
+Gather branches and plant fibers from brush piles south of the starting path. Press **C** to weave cordage, then carve a wooden spear with your knife. Search wardrobes and crates for clean cloth to make bandages. Dismantle broken chairs for wood and scrap. The workshop one block east contains a workbench for crafting padded splints; a cabin lies one block north.
+
+Recipes display required materials, tools, workstation, and work time through native lists and a readable details field. Materials can come from inventory or loose supplies on your tile or adjacent accessible tiles. Crafting reserves ingredients and proceeds in three-second work steps. Projects can be paused, saved, resumed, or cancelled to recover their materials. Enemies respond to the time you spend working. Press **I** to equip your finished spear, which reaches two tiles. Dropping a pistol returns its loaded cartridges to inventory so ammunition cannot duplicate.
 
 ## Keyboard and accessibility
 
@@ -15,8 +23,10 @@ The main menu contains **New game**, **Saved games**, **Settings**, and **Exit**
 | Arrows | Walk one tile |
 | Shift / Control / Alt + Arrow | Run / crouch / dodge |
 | Space | Jump two clear tiles in the facing direction |
-| Enter or G | Nearby interaction menu |
-| I | Inventory and usable items |
+| Enter | Nearby object interactions |
+| G / D | Pick up loose items / put an item down |
+| I | Inventory, inspect, use, equip, and drop actions |
+| C | Crafting recipes and current project |
 | L / S / T | Surroundings / status / threats, without advancing time |
 | Tab on the map | Cycle enemy targets |
 | F / Shift + F / E | Attack / heavy attack / block |
@@ -37,28 +47,26 @@ Credits and licensing are in [CREDITS.md](CREDITS.md); downloads and checksums a
 
 ## Develop
 
-Requires 64-bit Python 3.14 on Windows for the pinned dependencies.
+With [uv](https://docs.astral.sh/uv/), run this command from the repository on 64-bit Windows:
 
 ```powershell
-python -m pip install -r requirements.txt
-python main.py
-python -m unittest discover -s tests -v
-python tools/smoke_ui.py
+uv run main.py
 ```
 
-Double-click `Start Game.bat` to run the source version after installing dependencies. Audio is included in Git; `python tools/fetch_assets.py` re-downloads it from the original publishers. Development tools and packaging:
+uv manages Python 3.14, creates `.venv`, and installs the locked runtime dependencies automatically. `uv.lock` is committed for reproducible setup. Double-click `Start Game.bat` to use the same launcher. Audio is included in Git; `uv run tools/fetch_assets.py` re-downloads it from the original publishers. Tests, development tools, and packaging:
 
 ```powershell
-python -m pip install -r requirements-dev.txt
-python -m ruff check .
-python -m ruff format --check .
+uv run python -m unittest discover -s tests -v
+uv run tools/smoke_ui.py
+uv run --group dev ruff check .
+uv run --group dev ruff format --check .
 powershell -ExecutionPolicy Bypass -File tools/build.ps1
 ```
 
 `game/engine.py` contains UI-independent mechanics and a nine-chunk LRU cache. Evicted chunks persist to session files; saves independently checkpoint chunks and atomically replace the manifest. Content-addressed chunk revisions avoid rewriting unchanged content and preserve the previous save if a write fails. Only nearby creatures receive detailed AI; distant chunks remain inactive. `game/ui.py`, `game/accessibility.py`, and `game/audio.py` consume the same state. JSON definitions live in `data/`; tests cover movement, interactions, combat, chunk eviction, persistence, and audio decoding.
 
-Saves, settings, and logs are stored under `%LOCALAPPDATA%\DarknessLiesAhead`. Each survivor has a separate save slot. Autosave runs every 30 seconds of game time and when returning to the menu or exiting; real time does not advance the world.
+Saves, settings, and logs are stored under `%LOCALAPPDATA%\DarknessLiesAhead`. Each survivor has a separate save slot. Autosave runs every 30 seconds of game time and when returning to the menu or exiting; real time does not advance the world. Version 1 saves remain loadable; visited areas retain their original tiles and changes, while newly explored chunks use the expanded generator.
 
 ## Development scope
 
-This first prototype implements the exploration and accessibility foundation, not the full design catalog in the existing `agents.md`. The next milestones are broader building generation and real flooring audio, creature migration and richer combat timing, crafting and cooking, agriculture, reclamation and settlements, and distant-world simulation. Existing save format is versioned; future changes will need migration handling.
+This prototype implements exploration, basic crafting, inventory handling, combat, and the accessibility foundation, rather than the full design catalog in the existing `agents.md`. The next milestones are a broader building catalog and flooring audio, advanced crafting and cooking, agriculture, reclamation and settlements, richer NPC behavior, and distant-world simulation. Existing save format is versioned; future changes will need migration handling.

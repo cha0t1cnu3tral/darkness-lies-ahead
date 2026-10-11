@@ -1,19 +1,27 @@
 {
   "chunk_size": 16,
+  "starting_buildings": {"0,0": "suburban_house", "1,0": "workshop", "0,-1": "cabin"},
+  "building_chance": 0.55,
+  "generation": {"tree_chance": 0.18, "encounter_chance": 0.55, "brush_min": 1, "brush_max": 3},
   "tiles": {
     ".": {"name": "overgrown grass", "surface": "grass", "color": "#35443a", "passable": true},
     ",": {"name": "cracked concrete path", "surface": "concrete", "color": "#666967", "passable": true},
     "#": {"name": "brick wall", "surface": "concrete", "color": "#75675b", "passable": false},
-    "w": {"name": "hardwood floor", "surface": "wood", "color": "#795b40", "passable": true},
-    "c": {"name": "faded carpet", "surface": "carpet", "color": "#534957", "passable": true},
-    "t": {"name": "kitchen tile", "surface": "concrete", "color": "#9a9884", "passable": true},
+    "w": {"name": "hardwood floor", "surface": "wood", "color": "#795b40", "passable": true, "indoors": true},
+    "c": {"name": "faded carpet", "surface": "carpet", "color": "#534957", "passable": true, "indoors": true},
+    "t": {"name": "kitchen tile", "surface": "concrete", "color": "#9a9884", "passable": true, "indoors": true},
+    "v": {"name": "workshop concrete floor", "surface": "concrete", "color": "#777d76", "passable": true, "indoors": true},
     "T": {"name": "old oak tree", "surface": "grass", "color": "#27362a", "passable": false}
   },
   "objects": {
     "door": {"name": "wooden door", "actions": ["open", "close"], "blocking": true},
     "cabinet": {"name": "kitchen cabinet", "actions": ["search"], "blocking": false, "loot": ["water", "beans"]},
-    "wardrobe": {"name": "bedroom wardrobe", "actions": ["search"], "blocking": false, "loot": ["bandage", "scrap"]},
-    "scavenger": {"name": "Mara, a fellow scavenger", "actions": ["talk"], "blocking": true, "dialogue": "The old house still has supplies. Walk east along the path. The entrance is in the west wall. Be careful of the feral dog beyond the yard."}
+    "wardrobe": {"name": "bedroom wardrobe", "actions": ["search"], "blocking": false, "loot": ["bandage", "scrap", "cloth", "cloth", "cloth"]},
+    "scavenger": {"name": "Mara, a fellow scavenger", "actions": ["talk"], "blocking": true, "dialogue": "The house east of here still has supplies. An old workshop lies one block east, and a cabin one block north. Gather materials from brush piles, weave cordage, and carve a spear with your knife. The workbench can help you make a splint. Watch for feral dogs."},
+    "brush": {"name": "pile of fallen branches and dry plants", "actions": ["gather"], "blocking": false, "loot": ["wood", "wood", "wood", "fiber", "fiber", "fiber", "fiber", "fiber", "fiber"], "sound": "gather"},
+    "supply_crate": {"name": "supply crate", "actions": ["search"], "blocking": false, "loot": ["cloth", "cloth", "cloth", "scrap", "scrap"]},
+    "workbench": {"name": "salvaged workbench", "actions": ["inspect"], "blocking": false, "station": "workbench", "description": "A sturdy bench with a vise and clear assembly space. Stand beside it and press C to craft workstation recipes."},
+    "chair": {"name": "broken wooden chair", "actions": ["dismantle"], "blocking": false, "loot": ["wood", "wood", "scrap"], "sound": "craft_wood"}
   },
   "buildings": {
     "suburban_house": {
@@ -24,7 +32,17 @@
         ",,,,,wwwwwwwc#..", ".....#wwwwccc#..", ".....#wwwwccc#..", ".....#wwwwccc#..",
         ".....#########..", "................", "................", "................"
       ],
-      "objects": [{"type": "door", "x": 5, "y": 8}, {"type": "door", "x": 9, "y": 7}, {"type": "cabinet", "x": 7, "y": 5}, {"type": "wardrobe", "x": 11, "y": 10}, {"type": "scavenger", "x": 2, "y": 6}]
+      "objects": [{"type": "door", "x": 5, "y": 8}, {"type": "door", "x": 9, "y": 7}, {"type": "cabinet", "x": 7, "y": 5}, {"type": "wardrobe", "x": 11, "y": 10}, {"type": "scavenger", "x": 2, "y": 6}, {"type": "brush", "x": 3, "y": 10}, {"type": "chair", "x": 7, "y": 10}]
+    },
+    "workshop": {
+      "name": "improvised salvage workshop",
+      "rows": ["................", "................", "................", ".....#########..", ".....#vvvvvvv#..", ".....#vvvvvvv#..", ".....#vvvvvvv#..", ".....#vvvvvvv#..", ",,,,,vvvvvvvv#..", ".....#vvvvvvv#..", ".....#vvvvvvv#..", ".....#vvvvvvv#..", ".....#########..", "................", "................", "................"],
+      "objects": [{"type": "door", "x": 5, "y": 8}, {"type": "workbench", "x": 8, "y": 6}, {"type": "supply_crate", "x": 11, "y": 5}, {"type": "chair", "x": 10, "y": 10}, {"type": "brush", "x": 3, "y": 10}]
+    },
+    "cabin": {
+      "name": "abandoned timber cabin",
+      "rows": ["................", "................", "................", ".....#########..", ".....#wwwwwww#..", ".....#wwwwwww#..", ".....#wwwwwww#..", ".....#wwwwwww#..", ",,,,,wwwwwwww#..", ".....#wwwwwww#..", ".....#wwwwwww#..", ".....#wwwwwww#..", ".....#########..", "................", "................", "................"],
+      "objects": [{"type": "door", "x": 5, "y": 8}, {"type": "supply_crate", "x": 7, "y": 5}, {"type": "cabinet", "x": 11, "y": 5}, {"type": "chair", "x": 7, "y": 10}, {"type": "brush", "x": 3, "y": 10}]
     }
   }
 }

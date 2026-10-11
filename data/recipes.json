@@ -1,0 +1,6 @@
+{
+  "cordage": {"name": "Woven cordage", "category": "Survival equipment", "materials": {"fiber": 3}, "tools": [], "seconds": 12, "output": {"cordage": 1}, "sound": "craft_cloth"},
+  "bandage": {"name": "Clean bandage", "category": "Medical supplies", "materials": {"cloth": 2}, "tools": ["cutting"], "seconds": 6, "output": {"bandage": 1}, "sound": "craft_cloth"},
+  "spear": {"name": "Wooden spear", "category": "Tools and weapons", "materials": {"wood": 2, "cordage": 1}, "tools": ["cutting"], "seconds": 18, "output": {"spear": 1}, "sound": "craft_wood"},
+  "splint": {"name": "Padded splint", "category": "Medical supplies", "materials": {"wood": 1, "cloth": 1, "cordage": 1}, "tools": ["cutting"], "workstation": "workbench", "seconds": 15, "output": {"splint": 1}, "sound": "craft_wood"}
+}
