@@ -27,6 +27,8 @@ Recipes display required materials, tools, workstation, and work time through na
 | G / D | Pick up loose items / put an item down |
 | I | Inventory, inspect, use, equip, and drop actions |
 | C | Crafting recipes and current project |
+| O / Shift + O | Select an object to track / read tracked distance and direction |
+| P | Start or stop automatic walking to the tracked object |
 | L / S / T | Surroundings / status / threats, without advancing time |
 | Tab on the map | Cycle enemy targets |
 | F / Shift + F / E | Attack / heavy attack / block |
@@ -38,6 +40,8 @@ Recipes display required materials, tools, workstation, and work time through na
 Menus, dialogs, lists, sliders, and event history use native wxWidgets Windows controls. NVDA receives action descriptions through the bundled NVDA Controller Client, including braille messages. The map exposes an application accessibility role. If NVDA intercepts movement keys, use **NVDA + Space** to enter focus mode. Use Tab and Shift + Tab for native menu navigation; Shift + Tab leaves the map for other controls.
 
 Sound never carries exclusive gameplay information. Movement, obstacles, enemies, attacks, and interactions also produce readable text. Settings independently control master, music, ambience, and effect volumes, NVDA announcements, speech ducking, and graphical contrast. The NVDA connection and native control flow have been checked locally; a full manual NVDA playthrough is still required before claiming complete accessibility certification.
+
+The **object tracker** lists objects and loose supplies in the surrounding nine chunks. Choose **Track** to follow a target's location or **Track and walk** to walk there automatically. Automatic walking uses normal tile steps and door-opening actions, stopping within interaction reach. It stops for nearby enemies, blocked paths, missing targets, loss of game focus, or any key press. Escape first stops automatic walking; a second press returns to the menu. Tracking persists in saves; automatic walking must be started again after loading. Routine steps retain footsteps and location feedback without announcing “walk east” or “walk west”; during automatic walking, speech focuses on doors, danger, and arrival.
 
 ## Recorded audio
 

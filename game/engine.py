@@ -26,6 +26,7 @@ class Event:
     surface: str = ""
     x: int | None = None
     y: int | None = None
+    routine: bool = False
 
 
 class World:
@@ -199,6 +200,7 @@ class Game:
         self.name = "Survivor"
         self.melee_weapon = "knife"
         self.crafting = None
+        self.tracked_object = None
 
     def ground_at(self, x, y):
         return [
@@ -575,12 +577,10 @@ class Game:
                 break
             self.x, self.y = nx, ny
             moved = True
-            events.append(
-                Event(f"{mode.capitalize()} {direction}. {tile['name']}.", "step", tile["surface"])
-            )
+            events.append(Event("", "step", tile["surface"], routine=True))
         if moved:
             self.stamina = min(100, self.stamina - cost + (1 if mode == "walk" else 0))
-            events.append(Event(self.describe()))
+            events.append(Event(self.describe(), routine=True))
             events += self.advance(2 if mode == "crouch" else 1, mode == "crouch")
         return events
 
@@ -658,7 +658,7 @@ class Game:
         tile, _ = self.world.at(self.x, self.y)
         return [
             Event(
-                "You jump two tiles " + self.facing + ". " + self.describe(),
+                "You jump two tiles. " + self.describe(),
                 "land",
                 tile["surface"],
             )

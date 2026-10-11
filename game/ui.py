@@ -9,6 +9,7 @@ from .accessibility import Narrator
 from .audio import Audio
 from .engine import Game, Event, ITEMS, RECIPES, SIZE
 from .dialogs import DetailChoiceDialog, NewGameDialog
+from .navigation import ObjectTracker
 from .paths import USER
 from . import settings as preferences
 
@@ -26,6 +27,9 @@ Enter: nearby object interactions. G: pick up nearby ground items.
 I: inventory, inspect, use, equip, and drop actions. D: put an item down.
 C: crafting recipes, project progress, continue work, or cancel a project.
 L: describe your tile and adjacent tiles.
+O: object tracker. Choose an object, then Track or Track and walk.
+Shift + O: read the tracked object's distance and direction.
+P: start or stop automatic walking. Escape or any other key interrupts walking.
 S: read health, stamina, time, and weapon status.
 T: inspect nearby threats without advancing time.
 Tab on the map: cycle enemy targets. F: melee attack. Shift + F: heavy attack.
@@ -39,6 +43,9 @@ between controls. Arrow keys select list entries. Enter activates a choice.
 NVDA receives game action descriptions and braille through its controller API.
 On the map, NVDA must pass keys through to the game; use NVDA + Space to switch
 to focus mode if needed. Every sound cue also has text feedback.
+The tracker surveys the surrounding nine chunks without advancing time.
+Automatic walking takes normal steps and door actions; enemies still take turns.
+It stops beside the object, when enemies appear, or when game focus is lost.
 
 Gather branches and plant fibers from brush piles. Weave cordage, then carve a
 wooden spear. Scavenge clean cloth for bandages. Crafting reserves materials;
@@ -160,6 +167,13 @@ class MapView(wx.Panel):
                     dc.SetPen(wx.Pen("#e9bc71", 3))
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                     dc.DrawRectangle(left + 2, top + 2, size - 4, size - 4)
+                if game.tracked_object and (game.tracked_object["x"], game.tracked_object["y"]) == (
+                    x,
+                    y,
+                ):
+                    dc.SetPen(wx.Pen("#80cfff", 3))
+                    dc.SetBrush(wx.TRANSPARENT_BRUSH)
+                    dc.DrawRectangle(left + 3, top + 3, size - 6, size - 6)
                 if (x, y) == (game.x, game.y):
                     dc.SetBrush(wx.Brush("#a8edd6"))
                     dc.SetPen(wx.Pen("#ffffff", 2))
@@ -181,6 +195,10 @@ class Frame(wx.Frame):
         self.history = []
         self.saved_turn = None
         self.scheduled_sounds = []
+        self.auto_walking = False
+        self.auto_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.auto_tick, self.auto_timer)
+        self.Bind(wx.EVT_ACTIVATE, self.on_activate)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
         self.timer = wx.Timer(self)
@@ -200,6 +218,7 @@ class Frame(wx.Frame):
             )
 
     def replace_panel(self, mode):
+        self.stop_auto_walk(announce=False)
         self.mode = mode
         for job in self.scheduled_sounds:
             job.Stop()
@@ -255,6 +274,7 @@ class Frame(wx.Frame):
         self.audio.environment(False)
 
     def menu_action(self, action):
+        self.stop_auto_walk(announce=False)
         self.audio.play("menu")
         action()
 
@@ -396,6 +416,7 @@ class Frame(wx.Frame):
 
     def play_screen(self):
         self.replace_panel("play")
+        self.tracker = ObjectTracker(self.game)
         self.SetTitle("Darkness Lies Ahead — " + self.game.name)
         self.header = self.text("", 15)
         body = wx.BoxSizer(wx.HORIZONTAL)
@@ -404,7 +425,7 @@ class Frame(wx.Frame):
         sidebar = wx.BoxSizer(wx.VERTICAL)
         legend = wx.StaticText(
             self.panel,
-            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Container   B Brush\nW Workbench   * Ground items\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nG: pick up • D: drop • C: craft\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu",
+            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Container   B Brush\nW Workbench   * Ground items\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nG: pick up • D: drop • C: craft\nO: tracker • P: auto-walk\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu / stop walking",
         )
         legend.SetForegroundColour("#f0ede0")
         sidebar.Add(legend, 0, wx.ALL, 10)
@@ -412,6 +433,7 @@ class Frame(wx.Frame):
             ("Nearby interactions", self.interaction_menu),
             ("Inventory", self.inventory_menu),
             ("Crafting", self.crafting_menu),
+            ("Object tracker", self.object_tracker_menu),
             ("Settings", self.show_settings),
             ("Save game", self.save_game),
             ("Main menu", self.return_menu),
@@ -445,8 +467,9 @@ class Frame(wx.Frame):
         self.audio.environment(bool(tile.get("indoors")))
         self.map.Refresh()
 
-    def deliver(self, events):
+    def deliver(self, events, quiet_movement=False):
         message = " ".join(e.text for e in events if e.text)
+        spoken = " ".join(e.text for e in events if e.text and not (quiet_movement and e.routine))
         delay = 0
         self.scheduled_sounds = [job for job in self.scheduled_sounds if job.IsRunning()]
         for event in events:
@@ -462,10 +485,75 @@ class Frame(wx.Frame):
             self.history = self.history[-150:]
             self.log.SetValue("\n".join(self.history))
             self.log.SetInsertionPointEnd()
-            self.announce(message)
+        if spoken:
+            self.announce(spoken)
         self.update_view()
         if self.saved_turn is not None and self.game.turn - self.saved_turn >= 30:
             self.save_game(silent=True)
+
+    def object_tracker_menu(self):
+        self.stop_auto_walk(announce=False)
+        targets = self.tracker.targets()
+        if self.game.tracked_object:
+            targets.insert(0, None)
+        labels = [
+            "Clear current tracked object"
+            if target is None
+            else f"{self.tracker.name(target)}, {self.tracker.distance(target)} tiles, {self.game.relative(target['x'], target['y'])}"
+            for target in targets
+        ]
+        dialog = DetailChoiceDialog(
+            self,
+            "Object tracker",
+            "Choose an object. Tab reads its details. Track follows its location; Track and walk moves to it.",
+            labels,
+            lambda index: (
+                "Stop tracking the selected object."
+                if targets[index] is None
+                else self.tracker.description(targets[index])
+            ),
+            action="Track",
+            secondary_action="Track and walk",
+        )
+        choice = dialog.ShowModal()
+        if choice in (wx.ID_OK, wx.ID_APPLY):
+            target = targets[dialog.GetSelection()]
+            self.deliver(self.tracker.clear() if target is None else self.tracker.select(target))
+        dialog.Destroy()
+        self.map.SetFocus()
+        if choice == wx.ID_APPLY and self.game.tracked_object:
+            self.start_auto_walk()
+
+    def start_auto_walk(self):
+        if not self.game.tracked_object:
+            self.deliver([Event("Select an object with O before starting automatic walking.")])
+            return
+        self.auto_walking = True
+        self.deliver([Event("Automatic walking started. Any key stops it.")])
+        self.auto_timer.Start(450)
+
+    def stop_auto_walk(self, announce=True):
+        was_walking = self.auto_walking
+        self.auto_walking = False
+        self.auto_timer.Stop()
+        if was_walking and announce and self.mode == "play":
+            self.deliver([Event("Automatic walking stopped.")])
+
+    def auto_tick(self, event=None):
+        if not self.auto_walking:
+            return
+        if self.mode != "play" or not self.map.HasFocus():
+            self.stop_auto_walk()
+            return
+        events, keep_walking = self.tracker.step()
+        if not keep_walking:
+            self.stop_auto_walk(announce=False)
+        self.deliver(events, quiet_movement=True)
+
+    def on_activate(self, event):
+        if not event.GetActive():
+            self.stop_auto_walk(announce=False)
+        event.Skip()
 
     def interaction_menu(self):
         choices = self.game.interactions()
@@ -661,6 +749,10 @@ class Frame(wx.Frame):
 
     def on_key(self, event):
         code = event.GetKeyCode()
+        if self.auto_walking:
+            self.stop_auto_walk()
+            if code in (wx.WXK_ESCAPE, ord("P")):
+                return
         if code == wx.WXK_F1:
             self.show_help()
             return
@@ -710,6 +802,13 @@ class Frame(wx.Frame):
             self.drop_menu()
         elif code == ord("C"):
             self.crafting_menu()
+        elif code == ord("O"):
+            if event.ShiftDown():
+                self.deliver(self.tracker.status())
+            else:
+                self.object_tracker_menu()
+        elif code == ord("P"):
+            self.start_auto_walk()
         elif code == ord("L"):
             self.deliver([Event(self.game.describe() + " " + self.game.nearby())])
         elif code == ord("S"):
@@ -749,6 +848,7 @@ class Frame(wx.Frame):
             event.Skip()
 
     def on_close(self, event):
+        self.stop_auto_walk(announce=False)
         if self.game and not self.save_game(silent=True):
             if event.CanVeto():
                 event.Veto()

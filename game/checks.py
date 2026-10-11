@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -29,7 +30,22 @@ def smoke():
         frame.deliver(frame.game.move("east"))
         app.Yield()
         assert frame.game.x == 4
-        assert "Walk east" in frame.log.GetValue()
+        assert "Position 4, 8" in frame.log.GetValue()
+        assert "Walk east" not in frame.log.GetValue()
+        tracker_target = {"kind": "object", "type": "brush", "x": 3, "y": 10}
+        frame.tracker.select(tracker_target)
+        frame.start_auto_walk()
+        with patch.object(frame.map, "HasFocus", return_value=True):
+            frame.auto_tick()
+        assert frame.game.x == 3
+        assert frame.auto_walking
+        frame.on_key(SimpleNamespace(GetKeyCode=lambda: wx.WXK_ESCAPE))
+        assert not frame.auto_walking
+        assert not frame.auto_timer.IsRunning()
+        assert frame.mode == "play"
+        with patch.object(ui.DetailChoiceDialog, "ShowModal", return_value=wx.ID_CANCEL):
+            frame.object_tracker_menu()
+        frame.game.move("east")
         assert frame.map.accessible.GetRole(0)[1] == wx.ROLE_SYSTEM_APPLICATION
         details = ui.DetailChoiceDialog(
             frame,

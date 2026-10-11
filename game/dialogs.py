@@ -44,7 +44,9 @@ class NewGameDialog(wx.Dialog):
 
 
 class DetailChoiceDialog(wx.Dialog):
-    def __init__(self, parent, title, prompt, choices, details, action="Select"):
+    def __init__(
+        self, parent, title, prompt, choices, details, action="Select", secondary_action=None
+    ):
         super().__init__(parent, title=title, size=(700, 550))
         self.SetMinSize((550, 420))
         layout = wx.BoxSizer(wx.VERTICAL)
@@ -59,6 +61,10 @@ class DetailChoiceDialog(wx.Dialog):
         layout.Add(self.choices, 1, wx.EXPAND | wx.ALL, 12)
         layout.Add(self.details, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 12)
         buttons = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+        if secondary_action:
+            secondary = wx.Button(self, wx.ID_APPLY, label=secondary_action)
+            secondary.Bind(wx.EVT_BUTTON, lambda event: self.EndModal(wx.ID_APPLY))
+            buttons.Add(secondary, 0, wx.LEFT, 8)
         self.FindWindowById(wx.ID_OK).SetLabel(action)
         layout.Add(buttons, 0, wx.ALL | wx.ALIGN_CENTER, 12)
         self.SetSizer(layout)
