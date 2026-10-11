@@ -201,6 +201,7 @@ class Game:
         self.melee_weapon = "knife"
         self.crafting = None
         self.tracked_object = None
+        self.tracker_category = None
 
     def ground_at(self, x, y):
         return [

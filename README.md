@@ -27,6 +27,9 @@ Recipes display required materials, tools, workstation, and work time through na
 | G / D | Pick up loose items / put an item down |
 | I | Inventory, inspect, use, equip, and drop actions |
 | C | Crafting recipes and current project |
+| Page Up / Page Down | Previous / next object in the current category |
+| Ctrl + Page Up / Page Down | Previous / next object category |
+| Ctrl + Home | Automatically walk to the selected object |
 | O / Shift + O | Select an object to track / read tracked distance and direction |
 | P | Start or stop automatic walking to the tracked object |
 | L / S / T | Surroundings / status / threats, without advancing time |
@@ -41,7 +44,9 @@ Menus, dialogs, lists, sliders, and event history use native wxWidgets Windows c
 
 Sound never carries exclusive gameplay information. Movement, obstacles, enemies, attacks, and interactions also produce readable text. Settings independently control master, music, ambience, and effect volumes, NVDA announcements, speech ducking, and graphical contrast. The NVDA connection and native control flow have been checked locally; a full manual NVDA playthrough is still required before claiming complete accessibility certification.
 
-The **object tracker** lists objects and loose supplies in the surrounding nine chunks. Choose **Track** to follow a target's location or **Track and walk** to walk there automatically. Automatic walking uses normal tile steps and door-opening actions, stopping within interaction reach. It stops for nearby enemies, blocked paths, missing targets, loss of game focus, or any key press. Escape first stops automatic walking; a second press returns to the menu. Tracking persists in saves; automatic walking must be started again after loading. Routine steps retain footsteps and location feedback without announcing “walk east” or “walk west”; during automatic walking, speech focuses on doors, danger, and arrival.
+The **object tracker** groups objects and loose supplies in the surrounding nine chunks into categories: entrances, containers, people, gathering, furniture, workstations, food and drink, medical supplies, weapons and tools, ammunition, and crafting materials. On the map, **Page Up/Down** cycles objects within the current category, **Ctrl + Page Up/Down** cycles populated categories, and **Ctrl + Home** walks to the selected object. Selections wrap around and announce the category, object number, name, distance, and direction without advancing time. The **O** menu remains available for choosing **Track** or **Track and walk**.
+
+Automatic walking uses normal tile steps and door-opening actions, stopping within interaction reach. It stops for nearby enemies, blocked paths, missing targets, loss of game focus, or any key press. Escape first stops automatic walking; a second press returns to the menu. The tracked object and category persist in saves; automatic walking must be started again after loading. Routine steps retain footsteps and location feedback without announcing “walk east” or “walk west”; during automatic walking, speech focuses on doors, danger, and arrival.
 
 ## Recorded audio
 

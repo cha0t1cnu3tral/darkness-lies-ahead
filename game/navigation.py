@@ -30,6 +30,61 @@ class ObjectTracker:
         definitions = WORLD["objects"] if target["kind"] == "object" else ITEMS
         return definitions[target["type"]]["name"]
 
+    def category(self, target):
+        definitions = WORLD["objects"] if target["kind"] == "object" else ITEMS
+        return definitions[target["type"]].get("category", "Other objects")
+
+    def grouped_targets(self):
+        groups = {}
+        for target in self.targets():
+            groups.setdefault(self.category(target), []).append(target)
+        order = WORLD["tracker_categories"]
+        names = [name for name in order if name in groups]
+        names.extend(sorted(set(groups) - set(names)))
+        return {name: groups[name] for name in names}
+
+    def cycle_object(self, offset):
+        groups = self.grouped_targets()
+        if not groups:
+            return [Event("No nearby objects to track.")]
+        category = self.game.tracker_category
+        if category not in groups:
+            category = next(iter(groups))
+        targets = groups[category]
+        current = self.game.tracked_object
+        index = (
+            (targets.index(current) + offset) % len(targets)
+            if current in targets
+            else (0 if offset > 0 else len(targets) - 1)
+        )
+        return self.browse_select(targets[index], index, len(targets))
+
+    def cycle_category(self, offset):
+        groups = self.grouped_targets()
+        if not groups:
+            return [Event("No nearby object categories.")]
+        names = list(groups)
+        current = self.game.tracker_category
+        index = (
+            (names.index(current) + offset) % len(names)
+            if current in names
+            else (0 if offset > 0 else len(names) - 1)
+        )
+        targets = groups[names[index]]
+        return self.browse_select(targets[0], 0, len(targets))
+
+    def browse_select(self, target, index, total):
+        self.select(target)
+        return [
+            Event(
+                f"{self.category(target)}. Object {index + 1} of {total}. "
+                + self.description(target, include_help=False),
+                "target",
+                x=target["x"],
+                y=target["y"],
+            )
+        ]
+
     def distance(self, target):
         return abs(target["x"] - self.game.x) + abs(target["y"] - self.game.y)
 
@@ -43,7 +98,7 @@ class ObjectTracker:
             pile["item"] == target["type"] for pile in self.game.ground_at(target["x"], target["y"])
         )
 
-    def description(self, target):
+    def description(self, target, include_help=True):
         text = f"{self.name(target)}. {self.distance(target)} tiles away, {self.game.relative(target['x'], target['y'])}."
         if target["kind"] == "object":
             obj = next(
@@ -59,6 +114,8 @@ class ObjectTracker:
                     text += " Open." if obj["opened"] else " Closed."
                 elif obj.get("searched"):
                     text += " Already searched or gathered."
+        if not include_help:
+            return text
         return (
             text
             + " Automatic walking stops within interaction reach. It opens doors using normal turns and stops when enemies are nearby."
@@ -68,6 +125,7 @@ class ObjectTracker:
         if not self.exists(target):
             return [Event("That object is no longer there.")]
         self.game.tracked_object = dict(target)
+        self.game.tracker_category = self.category(target)
         return [
             Event("Tracking " + self.description(target), "target", x=target["x"], y=target["y"])
         ]

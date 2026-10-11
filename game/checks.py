@@ -43,6 +43,26 @@ def smoke():
         assert not frame.auto_walking
         assert not frame.auto_timer.IsRunning()
         assert frame.mode == "play"
+
+        def key(code, control=False):
+            return SimpleNamespace(GetKeyCode=lambda: code, ControlDown=lambda: control)
+
+        before = frame.game.turn
+        with patch.object(frame.map, "HasFocus", return_value=True):
+            frame.on_key(key(wx.WXK_PAGEDOWN, True))
+            category = frame.game.tracker_category
+            assert category != "Gathering"
+            frame.on_key(key(wx.WXK_PAGEDOWN))
+            assert frame.game.tracker_category == category
+            frame.on_key(key(wx.WXK_PAGEUP))
+            frame.on_key(key(wx.WXK_PAGEUP, True))
+            assert frame.game.tracker_category == "Gathering"
+            assert frame.game.turn == before
+            frame.on_key(key(wx.WXK_HOME, True))
+            assert frame.auto_walking
+            assert frame.auto_timer.IsRunning()
+            frame.on_key(key(wx.WXK_ESCAPE))
+            assert not frame.auto_walking
         with patch.object(ui.DetailChoiceDialog, "ShowModal", return_value=wx.ID_CANCEL):
             frame.object_tracker_menu()
         frame.game.move("east")

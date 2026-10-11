@@ -1,15 +1,80 @@
 {
-  "water": {"name": "bottle of clean water", "action": "drink", "stamina": 20},
-  "beans": {"name": "tin of beans", "action": "eat", "stamina": 25},
-  "bandage": {"name": "clean bandage", "action": "heal", "health": 20},
-  "scrap": {"name": "scrap metal", "action": null},
-  "knife": {"name": "utility knife", "action": null, "damage": 12, "reach": 1, "weapon": "melee", "tool": "cutting"},
-  "pistol": {"name": "salvaged pistol", "action": null, "damage": 22, "reach": 8},
-  "ammo": {"name": "pistol cartridge", "action": null},
-  "cloth": {"name": "clean cloth", "action": null},
-  "wood": {"name": "sturdy branch", "action": null},
-  "fiber": {"name": "plant fibers", "action": null},
-  "cordage": {"name": "woven cordage", "action": null},
-  "spear": {"name": "wooden spear", "action": null, "weapon": "melee", "damage": 16, "reach": 2},
-  "splint": {"name": "padded splint", "action": "heal", "health": 30}
+  "water": {
+    "name": "bottle of clean water",
+    "action": "drink",
+    "stamina": 20,
+    "category": "Food and drink"
+  },
+  "beans": {
+    "name": "tin of beans",
+    "action": "eat",
+    "stamina": 25,
+    "category": "Food and drink"
+  },
+  "bandage": {
+    "name": "clean bandage",
+    "action": "heal",
+    "health": 20,
+    "category": "Medical supplies"
+  },
+  "scrap": {
+    "name": "scrap metal",
+    "action": null,
+    "category": "Crafting materials"
+  },
+  "knife": {
+    "name": "utility knife",
+    "action": null,
+    "damage": 12,
+    "reach": 1,
+    "weapon": "melee",
+    "tool": "cutting",
+    "category": "Weapons and tools"
+  },
+  "pistol": {
+    "name": "salvaged pistol",
+    "action": null,
+    "damage": 22,
+    "reach": 8,
+    "category": "Weapons and tools"
+  },
+  "ammo": {
+    "name": "pistol cartridge",
+    "action": null,
+    "category": "Ammunition"
+  },
+  "cloth": {
+    "name": "clean cloth",
+    "action": null,
+    "category": "Crafting materials"
+  },
+  "wood": {
+    "name": "sturdy branch",
+    "action": null,
+    "category": "Crafting materials"
+  },
+  "fiber": {
+    "name": "plant fibers",
+    "action": null,
+    "category": "Crafting materials"
+  },
+  "cordage": {
+    "name": "woven cordage",
+    "action": null,
+    "category": "Crafting materials"
+  },
+  "spear": {
+    "name": "wooden spear",
+    "action": null,
+    "weapon": "melee",
+    "damage": 16,
+    "reach": 2,
+    "category": "Weapons and tools"
+  },
+  "splint": {
+    "name": "padded splint",
+    "action": "heal",
+    "health": 30,
+    "category": "Medical supplies"
+  }
 }

@@ -27,7 +27,10 @@ Enter: nearby object interactions. G: pick up nearby ground items.
 I: inventory, inspect, use, equip, and drop actions. D: put an item down.
 C: crafting recipes, project progress, continue work, or cancel a project.
 L: describe your tile and adjacent tiles.
-O: object tracker. Choose an object, then Track or Track and walk.
+Page Up / Page Down: previous / next object in the current category.
+Control + Page Up / Page Down: previous / next object category.
+Control + Home: automatically walk to the selected object.
+O: object tracker menu. Choose an object, then Track or Track and walk.
 Shift + O: read the tracked object's distance and direction.
 P: start or stop automatic walking. Escape or any other key interrupts walking.
 S: read health, stamina, time, and weapon status.
@@ -425,7 +428,7 @@ class Frame(wx.Frame):
         sidebar = wx.BoxSizer(wx.VERTICAL)
         legend = wx.StaticText(
             self.panel,
-            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Container   B Brush\nW Workbench   * Ground items\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nG: pick up • D: drop • C: craft\nO: tracker • P: auto-walk\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu / stop walking",
+            label="THE OVERGROWN SUBURB\n\n@ You   M Mara   D Feral dog\n+ Closed door   / Open door\n? Container   B Brush\nW Workbench   * Ground items\n\nArrows: walk\nShift: run • Control: crouch\nEnter: interact • I: inventory\nG: pick up • D: drop • C: craft\nPage Up/Down: objects\nCtrl + Page Up/Down: categories\nCtrl + Home: auto-walk\nO: tracker menu • P: stop/start\nL: surroundings • S: status\nF1: controls • F5: save\nEscape: main menu / stop walking",
         )
         legend.SetForegroundColour("#f0ede0")
         sidebar.Add(legend, 0, wx.ALL, 10)
@@ -493,13 +496,14 @@ class Frame(wx.Frame):
 
     def object_tracker_menu(self):
         self.stop_auto_walk(announce=False)
-        targets = self.tracker.targets()
+        groups = self.tracker.grouped_targets()
+        targets = [target for entries in groups.values() for target in entries]
         if self.game.tracked_object:
             targets.insert(0, None)
         labels = [
             "Clear current tracked object"
             if target is None
-            else f"{self.tracker.name(target)}, {self.tracker.distance(target)} tiles, {self.game.relative(target['x'], target['y'])}"
+            else f"{self.tracker.category(target)}: {self.tracker.name(target)}, {self.tracker.distance(target)} tiles, {self.game.relative(target['x'], target['y'])}"
             for target in targets
         ]
         dialog = DetailChoiceDialog(
@@ -779,7 +783,16 @@ class Frame(wx.Frame):
             wx.WXK_LEFT: "west",
             wx.WXK_RIGHT: "east",
         }
-        if code in directions:
+        if code in (wx.WXK_PAGEUP, wx.WXK_PAGEDOWN):
+            offset = -1 if code == wx.WXK_PAGEUP else 1
+            self.deliver(
+                self.tracker.cycle_category(offset)
+                if event.ControlDown()
+                else self.tracker.cycle_object(offset)
+            )
+        elif code == wx.WXK_HOME and event.ControlDown():
+            self.start_auto_walk()
+        elif code in directions:
             mode = (
                 "dodge"
                 if event.AltDown()

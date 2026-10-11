@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 
-from game.engine import Game
+from game.engine import Game, ITEMS, WORLD
 from game.navigation import ObjectTracker
 
 
@@ -25,6 +25,49 @@ class NavigationTests(unittest.TestCase):
         self.assertIsNotNone(self.tracker.route())
         self.assertEqual(self.game.turn, 0)
         self.assertLessEqual(len(self.game.world.cache), 9)
+
+    def test_every_object_and_item_has_a_declared_category(self):
+        categories = set(WORLD["tracker_categories"])
+        for definition in list(WORLD["objects"].values()) + list(ITEMS.values()):
+            self.assertIn(definition["category"], categories)
+
+    def test_page_navigation_stays_in_category_and_wraps_both_directions(self):
+        doors = self.tracker.grouped_targets()["Doors and entrances"]
+        self.tracker.select(doors[0])
+        self.tracker.cycle_object(-1)
+        self.assertEqual(self.game.tracked_object, doors[-1])
+        self.tracker.cycle_object(1)
+        self.assertEqual(self.game.tracked_object, doors[0])
+        events = self.tracker.cycle_object(1)
+        self.assertEqual(self.game.tracked_object, doors[1])
+        self.assertEqual(self.game.tracker_category, "Doors and entrances")
+        self.assertIn("Object 2 of", events[0].text)
+        self.assertEqual(self.game.turn, 0)
+
+    def test_category_navigation_skips_empty_categories_and_selects_object(self):
+        groups = self.tracker.grouped_targets()
+        names = list(groups)
+        self.tracker.select(groups[names[0]][0])
+        self.tracker.cycle_category(-1)
+        self.assertEqual(self.game.tracker_category, names[-1])
+        self.tracker.cycle_category(1)
+        self.assertEqual(self.game.tracker_category, names[0])
+        self.tracker.cycle_category(1)
+        self.assertEqual(self.game.tracker_category, names[1])
+        self.assertEqual(self.game.tracked_object, groups[names[1]][0])
+        self.assertEqual(self.game.turn, 0)
+
+    def test_browsing_recovers_after_selected_item_is_removed(self):
+        game = self.game
+        game.drop_item("ammo", 1)
+        self.choose("item", "ammo", 3, 8)
+        self.assertEqual(game.tracker_category, "Ammunition")
+        game.pickup(3, 8, "ammo")
+        before = game.turn
+        self.tracker.cycle_object(1)
+        self.assertNotEqual(game.tracker_category, "Ammunition")
+        self.assertTrue(self.tracker.exists(game.tracked_object))
+        self.assertEqual(game.turn, before)
 
     def test_route_opens_doors_and_arrives_with_normal_steps(self):
         game = self.game
@@ -107,6 +150,7 @@ class NavigationTests(unittest.TestCase):
             self.addCleanup(restored.world.close)
             tracker = ObjectTracker(restored)
             self.assertEqual(restored.tracked_object, game.tracked_object)
+            self.assertEqual(restored.tracker_category, "Ammunition")
             restored.pickup(3, 8, "ammo")
             before = restored.turn
             _, keep_walking = tracker.step()
