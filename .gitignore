@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+.vendor/
+build/
+dist/
+*.spec
+downloads/
+saves/
+settings.json
+*.log
+.ruff_cache/
+packaged-smoke.txt

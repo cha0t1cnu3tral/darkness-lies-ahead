@@ -1,0 +1,22 @@
+{
+  "music": "midnight.mp3",
+  "ambience": "wind.wav",
+  "effects": {
+    "open": ["rpg-audio/doorOpen_1.ogg", "rpg-audio/doorOpen_2.ogg"],
+    "close": ["rpg-audio/doorClose_1.ogg", "rpg-audio/doorClose_2.ogg"],
+    "search": ["rpg-audio/cloth1.ogg", "rpg-audio/handleCoins.ogg"],
+    "use": ["rpg-audio/cloth2.ogg"],
+    "blocked": ["impact-sounds/impactWood_light_000.ogg"],
+    "attack": ["rpg-audio/knifeSlice.ogg", "rpg-audio/knifeSlice2.ogg"],
+    "hurt": ["impact-sounds/impactPunch_medium_000.ogg"],
+    "block": ["impact-sounds/impactMetal_medium_000.ogg"],
+    "fire": ["pistol_000.wav", "pistol_001.wav", "pistol_002.wav", "pistol_003.wav"],
+    "reload": ["reload.wav"],
+    "target": ["interface-sounds/select_001.ogg"],
+    "menu": ["interface-sounds/click_001.ogg"],
+    "save": ["interface-sounds/confirmation_001.ogg"],
+    "talk": ["rpg-audio/cloth3.ogg"],
+    "rest": ["rpg-audio/cloth4.ogg"]
+  },
+  "surfaces": {"grass": "footstep_grass_*.ogg", "wood": "footstep_wood_*.ogg", "carpet": "footstep_carpet_*.ogg", "concrete": "footstep_concrete_*.ogg"}
+}

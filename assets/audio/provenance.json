@@ -1,0 +1,58 @@
+[
+  {
+    "pack": "impact-sounds",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/impact-sounds",
+    "download": "https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip",
+    "archive_sha256": "029d734af1582474edf3a694d1b0cebc97c1c152f2f39fa34d4c2bafc5de77f8"
+  },
+  {
+    "pack": "rpg-audio",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/rpg-audio",
+    "download": "https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip",
+    "archive_sha256": "6dbeaf8544da958d8f2adcb4a4a4b76c1ade34a05f8ab9edccd327da7375f38b"
+  },
+  {
+    "pack": "interface-sounds",
+    "author": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/interface-sounds",
+    "download": "https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip",
+    "archive_sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232"
+  },
+  {
+    "pack": "midnight",
+    "author": "Anton Revin",
+    "license": "CC0-1.0",
+    "source": "https://opengameart.org/content/midnight",
+    "download": "https://opengameart.org/sites/default/files/Midnight.mp3",
+    "sha256": "332b3aadb3a3b7d80ef2f036c4a0768c57e91402228ac70e06504e99d855c201"
+  },
+  {
+    "pack": "wind",
+    "author": "Luke.RUSTLTD",
+    "license": "CC0-1.0",
+    "source": "https://opengameart.org/content/wind1",
+    "download": "https://opengameart.org/sites/default/files/wind1.wav",
+    "sha256": "a2856f794fbf77e05f8241dc4adeade7f62fa21c3c9dc49f7725b6c6218060c3"
+  },
+  {
+    "pack": "pistol",
+    "author": "Tabasco",
+    "license": "CC0-1.0",
+    "source": "https://opengameart.org/content/gunshot-sounds",
+    "download": "https://opengameart.org/sites/default/files/sounds.zip",
+    "archive_member": "sounds/cz.wav",
+    "changes": "Separated four recorded shots with 80ms tail fades"
+  },
+  {
+    "pack": "reload",
+    "author": "SpringySpringo",
+    "license": "CC0-1.0",
+    "source": "https://opengameart.org/content/gun-reload-sounds",
+    "download": "https://opengameart.org/sites/default/files/gunreload1.wav"
+  }
+]

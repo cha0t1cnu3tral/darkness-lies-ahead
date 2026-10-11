@@ -1,0 +1,9 @@
+{
+  "water": {"name": "bottle of clean water", "action": "drink", "stamina": 20},
+  "beans": {"name": "tin of beans", "action": "eat", "stamina": 25},
+  "bandage": {"name": "clean bandage", "action": "heal", "health": 20},
+  "scrap": {"name": "scrap metal", "action": null},
+  "knife": {"name": "utility knife", "action": null, "damage": 12, "reach": 1},
+  "pistol": {"name": "salvaged pistol", "action": null, "damage": 22, "reach": 8},
+  "ammo": {"name": "pistol cartridge", "action": null}
+}

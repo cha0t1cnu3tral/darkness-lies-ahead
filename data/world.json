@@ -1,0 +1,30 @@
+{
+  "chunk_size": 16,
+  "tiles": {
+    ".": {"name": "overgrown grass", "surface": "grass", "color": "#35443a", "passable": true},
+    ",": {"name": "cracked concrete path", "surface": "concrete", "color": "#666967", "passable": true},
+    "#": {"name": "brick wall", "surface": "concrete", "color": "#75675b", "passable": false},
+    "w": {"name": "hardwood floor", "surface": "wood", "color": "#795b40", "passable": true},
+    "c": {"name": "faded carpet", "surface": "carpet", "color": "#534957", "passable": true},
+    "t": {"name": "kitchen tile", "surface": "concrete", "color": "#9a9884", "passable": true},
+    "T": {"name": "old oak tree", "surface": "grass", "color": "#27362a", "passable": false}
+  },
+  "objects": {
+    "door": {"name": "wooden door", "actions": ["open", "close"], "blocking": true},
+    "cabinet": {"name": "kitchen cabinet", "actions": ["search"], "blocking": false, "loot": ["water", "beans"]},
+    "wardrobe": {"name": "bedroom wardrobe", "actions": ["search"], "blocking": false, "loot": ["bandage", "scrap"]},
+    "scavenger": {"name": "Mara, a fellow scavenger", "actions": ["talk"], "blocking": true, "dialogue": "The old house still has supplies. Walk east along the path. The entrance is in the west wall. Be careful of the feral dog beyond the yard."}
+  },
+  "buildings": {
+    "suburban_house": {
+      "name": "abandoned suburban house",
+      "rows": [
+        "................", "................", "................", ".....#########..",
+        ".....#ttttwww#..", ".....#ttttwww#..", ".....#ttttwww#..", ".....####w####..",
+        ",,,,,wwwwwwwc#..", ".....#wwwwccc#..", ".....#wwwwccc#..", ".....#wwwwccc#..",
+        ".....#########..", "................", "................", "................"
+      ],
+      "objects": [{"type": "door", "x": 5, "y": 8}, {"type": "door", "x": 9, "y": 7}, {"type": "cabinet", "x": 7, "y": 5}, {"type": "wardrobe", "x": 11, "y": 10}, {"type": "scavenger", "x": 2, "y": 6}]
+    }
+  }
+}
